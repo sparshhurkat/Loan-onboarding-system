@@ -12,7 +12,7 @@ public class UserEntity {
 	
 	private String address;
 	
-	private double bankAccountNumber;
+	private String bankAccountNumber;
 
 	public String getAuthToken() {
 		return authToken;
@@ -54,11 +54,11 @@ public class UserEntity {
 		this.address = address;
 	}
 
-	public double getBankAccountNumber() {
+	public String getBankAccountNumber() {
 		return bankAccountNumber;
 	}
 
-	public void setBankAccountNumber(double bankAccountNumber) {
+	public void setBankAccountNumber(String bankAccountNumber) {
 		this.bankAccountNumber = bankAccountNumber;
 	}
 }

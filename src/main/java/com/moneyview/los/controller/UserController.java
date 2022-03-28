@@ -1,26 +1,60 @@
 package com.moneyview.los.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.net.URI;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
-import com.moneyview.los.model.ApiResponse;
 import com.moneyview.los.model.UserEntity;
-import com.moneyview.los.service.UserService;
 
 @RestController
 public class UserController {
 	
-	@Autowired
-    private UserService userService;
+	RestTemplate restTemplate= new RestTemplate();
+	private String authServiceUrl = "http://localhost:8080";
+	
 	
 	//get userid,authtoken,cibilscore,empstatus,address & BAN from user
 	//send userid and authtoken to auth service to check for validity
 	@PostMapping("/validateUser")
-    public ApiResponse<UserEntity> validateUser(@RequestBody UserEntity user){
-        return new ApiResponse<>(HttpStatus.OK.value(), "User is authorized",userService.validate(user));
+    public void validateUser(@RequestBody UserEntity user){
+		if(authTokenisValid(user)) {
+			//call retriveUserDetails(user) from LoanApplicationController
+			
+		}
     }
+	
+	
+	//send POST request with user entity to auth service
+	//if status code is ok, return boolean isValid=true
+	public boolean authTokenisValid(UserEntity user) {
+		boolean isValid = false;
+		
+		String url = authServiceUrl + "/verifyToken";
+		
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, user, String.class);
+
+        HttpStatus statusCode = responseEntity.getStatusCode();
+        System.out.println("status code - " + statusCode);
+        String userDetails = responseEntity.getBody();
+        System.out.println("response body - " + userDetails);
+        HttpHeaders responseHeaders = responseEntity.getHeaders();
+        System.out.println("response Headers - " + responseHeaders);
+        URI uri = restTemplate.postForLocation(url, user, String.class);
+        System.out.println("uri - " + uri);
+        
+        if(statusCode.value()==200) {
+        	isValid=true;
+        }
+        
+        
+        return isValid;
+	}
+	
 	
 }

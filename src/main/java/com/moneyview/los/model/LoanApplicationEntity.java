@@ -29,7 +29,7 @@ public class LoanApplicationEntity {
 	
 	private String email;
 	
-	private long phoneNumber;
+	private String phoneNumber;
 	
 	private int partnerId;
 	
@@ -45,7 +45,7 @@ public class LoanApplicationEntity {
 	
 	private String pan;
 	
-	private double bankAccountNumber;
+	private String bankAccountNumber;
 	
 	private boolean loanStatus;
 
@@ -89,11 +89,11 @@ public class LoanApplicationEntity {
 		this.email = email;
 	}
 
-	public long getPhoneNumber() {
+	public String getPhoneNumber() {
 		return phoneNumber;
 	}
 
-	public void setPhoneNumber(long phoneNumber) {
+	public void setPhoneNumber(String phoneNumber) {
 		this.phoneNumber = phoneNumber;
 	}
 
@@ -153,11 +153,11 @@ public class LoanApplicationEntity {
 		this.pan = pan;
 	}
 
-	public double getBankAccountNumber() {
+	public String getBankAccountNumber() {
 		return bankAccountNumber;
 	}
 
-	public void setBankAccountNumber(double bankAccountNumber) {
+	public void setBankAccountNumber(String bankAccountNumber) {
 		this.bankAccountNumber = bankAccountNumber;
 	}
 

@@ -38,30 +38,33 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    
         return loanApplicationRepository.save(newLoanApplication);
     }
-	
+
 	@Override
 	public LoanApplicationEntity findByLoanId(long loanId) {
-		Optional<User> optionalUser = loanApplicationRepository.findById(loanId);
-		return optionalUser.isPresent() ? optionalUser.get() : null;
+		return null;
+		/*Optional<User> optionalUser = loanApplicationRepository.findById(loanId);
+		return optionalUser.isPresent() ? optionalUser.get() : null;*/
 	}
 	
 	@Override
     public LoanApplicationEntity closeLoanApplication(long loanId) {
-		LoanApplicationEntity user = findById(loanApplicationEntity.getId());
+		return null;
+		/*LoanApplicationEntity user = findById(loanApplicationEntity.getId());
         if(user != null) {
             BeanUtils.copyProperties(loanApplicationEntity, user, "password");
             userDao.save(user);
         }
-        return userDto;
+        return userDto;*/
     }
 	
 	@Override
     public LoanApplicationEntity checkLoanStatus(long loanId) {
-		LoanApplicationEntity user = findById(loanApplicationEntity.getId());
+		return null;
+		/*LoanApplicationEntity user = findById(loanApplicationEntity.getId());
         if(user != null) {
             BeanUtils.copyProperties(loanApplicationEntity, user, "password");
             userDao.save(user);
         }
-        return userDto;
+        return userDto;*/
     }
 }
