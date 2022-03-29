@@ -1,9 +1,13 @@
 package com.moneyview.los.model;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,35 +23,52 @@ import lombok.Setter;
 @Entity
 @Table(name="loan_application")
 public class LoanApplicationEntity {
-	private String authToken;
 	
-	private long loanId;
+	//Details from Identity Service
+	private String firstName;
 	
-	private int refId;
+	private String lastName;
 	
-	private long userId;
+	@JsonFormat(pattern="yyyy/MM/dd")
+    private LocalDate dob;
+	
+	private String pan;
+	
+	private String aadhar;
 	
 	private String email;
 	
 	private String phoneNumber;
 	
+	
+	//We generate
+	private long loanId;
+	
+	private int refId;
+	
 	private int partnerId;
+	
+	private boolean loanStatus;
+	
+	
+	//Details from User
+	
+	//jsonignore
+	private String authToken;
+	
+	private long userId;
 	
 	private int cibilScore;
 	
-	private Date dob;
-	
 	private boolean empStatus;
-	
-	private double requestedAmount;
 	
 	private String address;
 	
-	private String pan;
-	
 	private String bankAccountNumber;
 	
-	private boolean loanStatus;
+	private double requestedAmount;
+	
+	
 
 	public String getAuthToken() {
 		return authToken;
@@ -113,11 +134,11 @@ public class LoanApplicationEntity {
 		this.cibilScore = cibilScore;
 	}
 
-	public Date getDob() {
+	public LocalDate getDob() {
 		return dob;
 	}
 
-	public void setDob(Date dob) {
+	public void setDob(LocalDate dob) {
 		this.dob = dob;
 	}
 
@@ -167,6 +188,30 @@ public class LoanApplicationEntity {
 
 	public void setLoanStatus(boolean loanStatus) {
 		this.loanStatus = loanStatus;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getAadhar() {
+		return aadhar;
+	}
+
+	public void setAadhar(String aadhar) {
+		this.aadhar = aadhar;
 	}
 	
 	

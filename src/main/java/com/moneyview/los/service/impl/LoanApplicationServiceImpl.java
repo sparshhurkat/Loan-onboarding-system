@@ -1,12 +1,16 @@
 package com.moneyview.los.service.impl;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.moneyview.los.constants.LoanApplicationStatus;
+import com.moneyview.los.exception.ResourceNotFoundException;
 import com.moneyview.los.model.LoanApplicationEntity;
+import com.moneyview.los.model.PartnerEntity;
 import com.moneyview.los.repository.LoanApplicationRepository;
 import com.moneyview.los.service.LoanApplicationService;
 
@@ -59,12 +63,23 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	
 	@Override
     public LoanApplicationEntity checkLoanStatus(long loanId) {
-		return null;
-		/*LoanApplicationEntity user = findById(loanApplicationEntity.getId());
-        if(user != null) {
-            BeanUtils.copyProperties(loanApplicationEntity, user, "password");
-            userDao.save(user);
-        }
-        return userDto;*/
+		return loanApplicationRepository.findById(loanId).orElseThrow(() 
+				-> new ResourceNotFoundException("Loan", "Id", loanId));
     }
+	
+	
+	//need to find any loan status in group of userid's which is active
+//	@Override
+//    public LoanApplicationStatus checkUserPanStatus(long userId) {
+//		return loanApplicationRepository.findLoanApplicationStatusById(userId).orElseThrow(() 
+//				-> new ResourceNotFoundException("Loan", "Id", userId));
+//    }
+	
+	@Override
+	public List<LoanApplicationStatus> checkUserPanStatus(long userId) {
+		List<LoanApplicationStatus> panStatus=loanApplicationRepository.checkLoanStatusById(userId);
+		return panStatus;
+	}
+	
+	
 }
