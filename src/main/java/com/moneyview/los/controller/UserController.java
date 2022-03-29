@@ -1,14 +1,11 @@
 package com.moneyview.los.controller;
 
-import java.net.URI;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -105,7 +102,6 @@ public class UserController {
 
 
 	public ResponseEntity<ApiResponse> retrieveUserDetails(UserEntity user) {
-		String identityServiceUrl = "http://localhost:8080";
 		String url = identityServiceUrl + "/retrieveUserDetails?service=1&id="+user.getUserId();
 
 		ResponseEntity<IdentityServiceEntity> responseEntity = restTemplate.getForEntity(url, IdentityServiceEntity.class);

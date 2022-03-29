@@ -1,12 +1,7 @@
 package com.moneyview.los.controller;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,17 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import com.moneyview.los.model.ApiResponse;
-import com.moneyview.los.model.IdentityServiceEntity;
 import com.moneyview.los.model.LoanApplicationEntity;
 import com.moneyview.los.model.ResponseBuilder;
-import com.moneyview.los.model.UserEntity;
 import com.moneyview.los.service.LoanApplicationService;
 
 @RestController
 public class LoanApplicationController {
 	
 	RestTemplate restTemplate= new RestTemplate();
-	private String identityServiceUrl = "http://localhost:8080";
 	LoanApplicationEntity loanApplicationEntity = new LoanApplicationEntity();
 
 	@Autowired

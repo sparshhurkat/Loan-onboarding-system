@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.moneyview.los.constants.LoanApplicationStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -48,7 +49,9 @@ public class LoanApplicationEntity {
 	
 	private int partnerId;
 	
-	private boolean loanStatus;
+	private LoanApplicationStatus loanStatus;
+	
+	private LocalDate loanAppliedDate;
 	
 	
 	//Details from User
@@ -182,11 +185,11 @@ public class LoanApplicationEntity {
 		this.bankAccountNumber = bankAccountNumber;
 	}
 
-	public boolean isLoanStatus() {
+	public LoanApplicationStatus isLoanStatus() {
 		return loanStatus;
 	}
 
-	public void setLoanStatus(boolean loanStatus) {
+	public void setLoanStatus(LoanApplicationStatus loanStatus) {
 		this.loanStatus = loanStatus;
 	}
 
@@ -212,6 +215,14 @@ public class LoanApplicationEntity {
 
 	public void setAadhar(String aadhar) {
 		this.aadhar = aadhar;
+	}
+
+	public LocalDate getLoanAppliedDate() {
+		return loanAppliedDate;
+	}
+
+	public void setLoanAppliedDate(LocalDate loanAppliedDate) {
+		this.loanAppliedDate = loanAppliedDate;
 	}
 	
 	
