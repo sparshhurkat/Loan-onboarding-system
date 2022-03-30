@@ -2,7 +2,10 @@ package com.moneyview.los.model;
 
 import java.time.LocalDate;
 
+import javax.persistence.Entity;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 
 public class IdentityServiceEntity {
 	private long userId;

@@ -2,8 +2,11 @@ package com.moneyview.los.service;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import com.moneyview.los.constants.LoanApplicationStatus;
 import com.moneyview.los.model.LoanApplicationEntity;
+
 
 public interface LoanApplicationService {
 	LoanApplicationEntity saveLoanApplication(LoanApplicationEntity loanApplicationEntity);
@@ -15,5 +18,5 @@ public interface LoanApplicationService {
 	
 	LoanApplicationEntity checkLoanStatus(long loanId);
 	
-	List<LoanApplicationStatus> checkUserPanStatus(long userId);
+	List<String> checkUserPanStatus(long userId);
 }

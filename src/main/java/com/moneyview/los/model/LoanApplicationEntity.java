@@ -4,7 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -25,32 +29,48 @@ import lombok.Setter;
 @Table(name="loan_application")
 public class LoanApplicationEntity {
 	
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private long id;
+	
 	//Details from Identity Service
+	@Column(name = "first_name",length=10)
 	private String firstName;
 	
+	@Column(name = "last_name",length=10)
 	private String lastName;
 	
+	@Column(name="dob")
 	@JsonFormat(pattern="yyyy/MM/dd")
     private LocalDate dob;
 	
+	@Column(name = "pan")
 	private String pan;
 	
+	@Column(name="aadhar")
 	private String aadhar;
 	
+	@Column(name = "email")
 	private String email;
 	
+	@Column(name="phone_number")
 	private String phoneNumber;
 	
 	
 	//We generate
-	private long loanId;
+
 	
+	@Column(name = "ref_id")
 	private int refId;
 	
+	@Column(name = "partner_id")
 	private int partnerId;
 	
-	private LoanApplicationStatus loanStatus;
+	@Column(name = "loan_status")
+	private String loanStatus;
 	
+	@Column(name = "loan_applied_date")
 	private LocalDate loanAppliedDate;
 	
 	
@@ -59,16 +79,22 @@ public class LoanApplicationEntity {
 	//jsonignore
 	private String authToken;
 	
+	@Column(name = "user_id")
 	private long userId;
 	
+	@Column(name = "cibil_score")
 	private int cibilScore;
 	
+	@Column(name = "emp_status")
 	private boolean empStatus;
 	
+	@Column(name = "address")
 	private String address;
 	
+	@Column(name = "bank_account_number")
 	private String bankAccountNumber;
 	
+	@Column(name = "requested_amount")
 	private double requestedAmount;
 	
 	
@@ -82,11 +108,11 @@ public class LoanApplicationEntity {
 	}
 
 	public long getLoanId() {
-		return loanId;
+		return id;
 	}
 
 	public void setLoanId(long loanId) {
-		this.loanId = loanId;
+		this.id = loanId;
 	}
 
 	public int getRefId() {
@@ -185,11 +211,11 @@ public class LoanApplicationEntity {
 		this.bankAccountNumber = bankAccountNumber;
 	}
 
-	public LoanApplicationStatus isLoanStatus() {
+	public String isLoanStatus() {
 		return loanStatus;
 	}
 
-	public void setLoanStatus(LoanApplicationStatus loanStatus) {
+	public void setLoanStatus(String loanStatus) {
 		this.loanStatus = loanStatus;
 	}
 

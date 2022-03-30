@@ -28,9 +28,10 @@ import com.moneyview.los.service.LoanApplicationService;
 public class UserController {
 
 	RestTemplate restTemplate= new RestTemplate();
-	private String authServiceUrl = "http://localhost:8080";
-	private String identityServiceUrl = "http://localhost:8080";
-	private String communicationServiceUrl = "http://localhost:8080";
+	private String authServiceUrl = "10.70.4.172:8080/validateToken";
+	private String idServicePostUrl = "http://localhost:8080/api/user/'10'?serviceId=los";
+	private String idServiceGetUrl = "http://localhost:8080/api/user/'10'?serviceId=los";
+	private String communicationServiceUrl = "http://localhost:8080/closeApplication";
 	LoanApplicationEntity loanApplicationEntity = new LoanApplicationEntity();
 	IdentityServiceEntity identityServiceEntity = new IdentityServiceEntity();
 
@@ -43,29 +44,51 @@ public class UserController {
 	@PostMapping("/validateUser")
 	public ResponseEntity<ApiResponse> validateUser(@RequestBody UserEntity user){
 
+		
 		if(!authTokenisValid(user)) {
 			//callAuthService - invalid auth token
-			String url = authServiceUrl + "/authenticateUser";
-			ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, "Application rejected, User not of age", String.class);
+			String url = "10.70.4.172:8080/validateToken";
+			HashMap<String,Object> hashmap = new HashMap<>();
+			hashmap.put("auth_token" , user.getAuthToken());
+			hashmap.put("user_id" , user.getUserId());
+			ResponseEntity<String> responseEntity = restTemplate.postForObject(authServiceUrl,hashmap, ResponseEntity.class);
+			System.out.println(responseEntity.getBody());
 		}
+		
+		
+		//get details from identity service
 		retrieveUserDetails(user);
 
-		postBanAddress(user);
-
-		//call retriveUserDetails(user) from LoanApplicationController
 		//post ban and address
+		postBanAddress(user);
+		
 		//calculateAge
 		if(checkAge(calculateAge(identityServiceEntity.getDob()))) {
-			//age
-			String url = communicationServiceUrl + "/closeApplication";
-			ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, "Application rejected, User not of age", String.class);
 			//call CommunicationService - Application rejected, User not of age
+			String url = "10.70.4.178:8180/sendSMS";
+			HashMap<String,Object> hashmap = new HashMap<>();
+			HashMap<String,Object> details = new HashMap<>();
+			hashmap.put("requestType" , "APPR");
+			details.put("userID" , identityServiceEntity.getUserId());
+			details.put("reason" , "Application rejected, User not of age");
+			hashmap.put("details" , details);
+			ResponseEntity<String> responseEntity = restTemplate.postForObject(url,hashmap, ResponseEntity.class);
+			System.out.println(responseEntity.getBody());
+			
 		}
 
+		
 		//checkPanUserStatus
 		if(checkLoanStatus(loanApplicationService.checkUserPanStatus(user.getUserId()).get(0))) {
-			String url = communicationServiceUrl + "/closeApplication";
-			ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, "Application rejected, User not of age", String.class);
+			//call CommunicationService - Application rejected, User alreaady has active loan
+			String url = "10.70.4.178:8180/sendSMS";
+			HashMap<String,Object> hashmap = new HashMap<>();
+			HashMap<String,Object> details = new HashMap<>();
+			hashmap.put("requestType" , "APPR");
+			details.put("userID" , identityServiceEntity.getUserId());
+			details.put("reason" , "Application rejected, User has active loan");
+			hashmap.put("details" , details);
+			ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, "Application rejected, User alreaady has active loan", String.class);
 		}
 
 
@@ -86,7 +109,7 @@ public class UserController {
 	public boolean authTokenisValid(UserEntity user) {
 		boolean isValid = false;
 
-		String url = authServiceUrl + "/verifyToken";
+		String url = authServiceUrl;
 
 		ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, user, String.class);
 
@@ -102,7 +125,7 @@ public class UserController {
 
 
 	public ResponseEntity<ApiResponse> retrieveUserDetails(UserEntity user) {
-		String url = identityServiceUrl + "/retrieveUserDetails?service=1&id="+user.getUserId();
+		String url = "http://localhost:8080/"+user.getUserId()+"?serviceId=los";
 
 		ResponseEntity<IdentityServiceEntity> responseEntity = restTemplate.getForEntity(url, IdentityServiceEntity.class);
 
@@ -158,29 +181,29 @@ public class UserController {
 		return false;
 	}
 
-	public static boolean checkLoanStatus(LoanApplicationStatus loanStatus)
+	public static boolean checkLoanStatus(String loanStatus)
 	{
 		/*
 		       Applied - Need to Change Loan Status
 		 */
 
-		if(loanStatus == LoanApplicationStatus.OPEN)
+		if(loanStatus == "open")
 		{
 			return false;
 		}
-		else if(loanStatus == LoanApplicationStatus.CLOSE)
+		else if(loanStatus == "close")
 		{
 			//user can re-apply now because the loan is closed.
 			return true;
 		}
-		else if (loanStatus == LoanApplicationStatus.UNDER_REVIEW)
+		else if (loanStatus == "under_review")
 		{
 			//something fishy
 			//Hold On
 			return true;
 
 		}
-		else if (loanStatus == LoanApplicationStatus.APPLIED)
+		else if (loanStatus == "under_review")
 		{
 			return true;
 

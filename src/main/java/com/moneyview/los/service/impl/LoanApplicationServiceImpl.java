@@ -3,6 +3,7 @@ package com.moneyview.los.service.impl;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ import com.moneyview.los.model.LoanPaymentScheduleEntity;
 import com.moneyview.los.repository.LoanApplicationRepository;
 import com.moneyview.los.service.LoanApplicationService;
 
-@Service(value="userService")
+@Service(value="loanApplicationService")
 public class LoanApplicationServiceImpl implements LoanApplicationService {
 	
 	@Autowired
@@ -48,14 +49,20 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    newLoanApplication.setLoanStatus(loanApplication.isLoanStatus());
 	    newLoanApplication.setLoanAppliedDate(currentDate);
 	    
-	    loanApplicationRepository.save(newLoanApplication);
+	    
 	    
 	    //refIdGeneration();
+	    //TODO: add update to database
+	    int refId = Integer.parseInt(UUID.randomUUID().toString());
+	    newLoanApplication.setRefId(refId);
+	    
+	    loanApplicationRepository.save(newLoanApplication);
 	    
 	    double interest=PartnerConstants.getPartnerModelList().get(newLoanApplication.getPartnerId()).getInterest();
 	    double principal=newLoanApplication.getRequestedAmount()/12;
 	    
 	    generatePaymentSchedule(newLoanApplication.getLoanId(), newLoanApplication.getUserId(), principal, interest, newLoanApplication.getLoanAppliedDate(), newLoanApplication.getPartnerId(), newLoanApplication.getBankAccountNumber());
+	    
 	    
 	    //send to ps
 	    String paymentServiceUrl = "http://localhost:8080" + "/sendRepaymentSchedule";
@@ -64,6 +71,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    //post to cs
 	    String communicationServiceUrl = "http://localhost:8080" + "/sendLoanAgreement";
 	    ResponseEntity<LoanPaymentScheduleEntity> agreementSchedule = restTemplate.postForEntity(communicationServiceUrl, "Send Loan agreement to the user", LoanPaymentScheduleEntity.class);
+	    
 	    
         return loanApplicationRepository.save(newLoanApplication);
     }
@@ -81,7 +89,10 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 		LoanApplicationEntity existingApplication = loanApplicationRepository.findById(loanId).orElseThrow(
 				() -> new ResourceNotFoundException("Loan", "Id", loanId)); 
 		
-		existingApplication.setLoanStatus(LoanApplicationStatus.CLOSE);
+		existingApplication.setLoanStatus(
+				//LoanApplicationStatus.CLOSE.toString()
+				"close")
+		;
 		
 		// save existing employee to DB
 		loanApplicationRepository.save(existingApplication);
@@ -100,8 +111,8 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 	
 	@Override
-	public List<LoanApplicationStatus> checkUserPanStatus(long userId) {
-		List<LoanApplicationStatus> panStatus=loanApplicationRepository.checkLoanStatusById(userId);
+	public List<String> checkUserPanStatus(long userId) {
+		List<String> panStatus=loanApplicationRepository.checkLoanStatusById(userId);
 		return panStatus;
 	}
 	
