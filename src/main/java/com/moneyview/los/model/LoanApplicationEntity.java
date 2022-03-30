@@ -2,6 +2,7 @@ package com.moneyview.los.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -167,6 +168,14 @@ public class LoanApplicationEntity {
 		return dob;
 	}
 
+	public void setDob(String dob) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+		  
+
+		  //convert String to LocalDate
+		  LocalDate localDate = LocalDate.parse(dob, formatter);
+		this.dob = localDate;
+	}
 	public void setDob(LocalDate dob) {
 		this.dob = dob;
 	}

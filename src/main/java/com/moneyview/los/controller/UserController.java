@@ -3,20 +3,16 @@ package com.moneyview.los.controller;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import com.moneyview.los.constants.LoanApplicationStatus;
 import com.moneyview.los.constants.PartnerConstants;
 import com.moneyview.los.model.ApiResponse;
-import com.moneyview.los.model.BanAddress;
 import com.moneyview.los.model.IdentityServiceEntity;
 import com.moneyview.los.model.LoanApplicationEntity;
 import com.moneyview.los.model.PartnerEntity;
@@ -28,10 +24,9 @@ import com.moneyview.los.service.LoanApplicationService;
 public class UserController {
 
 	RestTemplate restTemplate= new RestTemplate();
-	private String authServiceUrl = "10.70.4.172:8080/validateToken";
-	private String idServicePostUrl = "http://localhost:8080/api/user/'10'?serviceId=los";
-	private String idServiceGetUrl = "http://localhost:8080/api/user/'10'?serviceId=los";
-	private String communicationServiceUrl = "http://localhost:8080/closeApplication";
+	private String authServiceUrl = "http://localhost:8080/validateToken";
+	private String idServicePostUrl = "http://10.0.3.23:8080/addBanAddress";
+	private String communicationServiceUrl = "http://localhost:8080/sendSMS";
 	LoanApplicationEntity loanApplicationEntity = new LoanApplicationEntity();
 	IdentityServiceEntity identityServiceEntity = new IdentityServiceEntity();
 
@@ -40,55 +35,70 @@ public class UserController {
 
 
 	//get userid,authtoken,cibilscore,empstatus,address & BAN from user
-	//send userid and authtoken to auth service to check for validity
 	@PostMapping("/validateUser")
 	public ResponseEntity<ApiResponse> validateUser(@RequestBody UserEntity user){
 
 		
-		if(!authTokenisValid(user)) {
-			//callAuthService - invalid auth token
-			String url = "10.70.4.172:8080/validateToken";
-			HashMap<String,Object> hashmap = new HashMap<>();
-			hashmap.put("auth_token" , user.getAuthToken());
-			hashmap.put("user_id" , user.getUserId());
-			ResponseEntity<String> responseEntity = restTemplate.postForObject(authServiceUrl,hashmap, ResponseEntity.class);
-			System.out.println(responseEntity.getBody());
+		int authCode=authTokenStatusCode(user.getAuthToken(),user.getUserId());
+		
+		if(authCode!=200){
+			return ResponseBuilder.buildResponse(authCode,"Auth Error");
+		}
+
+
+		//get details from identity service
+		
+		int ISGetCode=retrieveUserDetails(user.getUserId());
+		
+		if(ISGetCode!=200){
+			return ResponseBuilder.buildResponse(ISGetCode,"Error getting User details");
 		}
 		
-		
-		//get details from identity service
-		retrieveUserDetails(user);
+		loanApplicationEntity.setUserId(user.getUserId());
+		loanApplicationEntity.setCibilScore(user.getCibilScore());
+		loanApplicationEntity.setEmpStatus(user.isEmpStatus());
+		loanApplicationEntity.setBankAccountNumber(user.getBankAccountNumber());
+		loanApplicationEntity.setAddress(user.getAddress());
 
 		//post ban and address
-		postBanAddress(user);
+		int ISPostCode=postBanAddress(user.getUserId(),user.getBankAccountNumber(),user.getAddress());
+		if(ISPostCode!=200){
+			return ResponseBuilder.buildResponse(ISPostCode,"Error posting User details");
+		}
 		
 		//calculateAge
 		if(checkAge(calculateAge(identityServiceEntity.getDob()))) {
 			//call CommunicationService - Application rejected, User not of age
-			String url = "10.70.4.178:8180/sendSMS";
 			HashMap<String,Object> hashmap = new HashMap<>();
 			HashMap<String,Object> details = new HashMap<>();
 			hashmap.put("requestType" , "APPR");
 			details.put("userID" , identityServiceEntity.getUserId());
-			details.put("reason" , "Application rejected, User not of age");
+			details.put("reason" , "User not of age");
 			hashmap.put("details" , details);
-			ResponseEntity<String> responseEntity = restTemplate.postForObject(url,hashmap, ResponseEntity.class);
-			System.out.println(responseEntity.getBody());
+			HashMap<String,String> responseEntity = restTemplate.postForObject(communicationServiceUrl,hashmap, HashMap.class);
 			
+			int communicationCode=Integer.parseInt(responseEntity.get("statusCode"));
+			if(communicationCode!=200){
+				return ResponseBuilder.buildResponse(communicationCode,"Error sending rejection to communication service");
+			}
 		}
 
-		
+
 		//checkPanUserStatus
 		if(checkLoanStatus(loanApplicationService.checkUserPanStatus(user.getUserId()).get(0))) {
 			//call CommunicationService - Application rejected, User alreaady has active loan
-			String url = "10.70.4.178:8180/sendSMS";
 			HashMap<String,Object> hashmap = new HashMap<>();
 			HashMap<String,Object> details = new HashMap<>();
 			hashmap.put("requestType" , "APPR");
 			details.put("userID" , identityServiceEntity.getUserId());
-			details.put("reason" , "Application rejected, User has active loan");
+			details.put("reason" , "User has active loan");
 			hashmap.put("details" , details);
-			ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, "Application rejected, User alreaady has active loan", String.class);
+			HashMap<String,String> responseEntity = restTemplate.postForObject(communicationServiceUrl, hashmap, HashMap.class);
+			
+			int communicationCode=Integer.parseInt(responseEntity.get("statusCode"));
+			if(communicationCode!=200){
+				return ResponseBuilder.buildResponse(communicationCode,responseEntity.toString());
+			}
 		}
 
 
@@ -96,73 +106,69 @@ public class UserController {
 		PartnerEntity partnerEntity= fetchPartnerToOnboard(loanApplicationEntity.getCibilScore(), loanApplicationEntity.isEmpStatus());
 
 
-		Map<String, Double> responseBody = new HashMap<>();
+		HashMap<String, Double> responseBody = new HashMap<>();
 		responseBody.put("Lower limit", partnerEntity.getLowLimit());
 		responseBody.put("Upper limit", partnerEntity.getUpperLimit());
 
-		return ResponseBuilder.buildResponse(200,"Hello", responseBody);
+		return ResponseBuilder.buildResponse(200, "API works", responseBody);
+	}
+
+	//get loan amount from user and save to database along with all the other details
+	@PostMapping("/openLoanApplication")
+	public ResponseEntity<ApiResponse> submitLoanApplication(@RequestBody HashMap<String,Double> loanAmount){
+		loanApplicationEntity.setRequestedAmount(loanAmount.get("loanAmount"));
+		return ResponseBuilder.buildResponse(200,"Loan application opened successfully", loanApplicationService.saveLoanApplication(loanApplicationEntity));
 	}
 
 
 	//send POST request with user entity to auth service
 	//if status code is ok, return boolean isValid=true
-	public boolean authTokenisValid(UserEntity user) {
+	public int authTokenStatusCode(String authToken,long userId) {
 		boolean isValid = false;
+		HashMap<String,Object> hashmap = new HashMap<>();
+		hashmap.put("auth_token" , authToken);
+		hashmap.put("user_id" , userId);
 
-		String url = authServiceUrl;
+		HashMap<String,String> responseEntity = restTemplate.postForObject(authServiceUrl,hashmap, HashMap.class);
 
-		ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, user, String.class);
-
-		HttpStatus statusCode = responseEntity.getStatusCode();
-
-		if(statusCode.value()==200) {
-			isValid=true;
-		}
-
-
-		return isValid;
+		return Integer.parseInt(responseEntity.get("statusCode"));
 	}
 
 
-	public ResponseEntity<ApiResponse> retrieveUserDetails(UserEntity user) {
-		String url = "http://localhost:8080/"+user.getUserId()+"?serviceId=los";
+	public int retrieveUserDetails(long userId) {
+		//TODO:cross verify
+		String url = "http://10.0.3.23:8080/api/user/" +userId+ "?serviceId=los";
 
-		ResponseEntity<IdentityServiceEntity> responseEntity = restTemplate.getForEntity(url, IdentityServiceEntity.class);
+		//HashMap<String,Object> hashmap = new HashMap<>();
+		HashMap<String,String> identityServiceEntity = restTemplate.getForObject(url, HashMap.class);
+		
+		//HashMap<String, String> responseEntity = restTemplate.getForEntity(url, HashMap.class);
 
-
-		loanApplicationEntity.setFirstName(identityServiceEntity.getFirstName());
-		loanApplicationEntity.setLastName(identityServiceEntity.getLastName());
-		loanApplicationEntity.setDob(identityServiceEntity.getDob());
-		loanApplicationEntity.setPan(identityServiceEntity.getPan());
-		loanApplicationEntity.setAadhar(identityServiceEntity.getAadhar());
-		loanApplicationEntity.setEmail(identityServiceEntity.getEmail());
-		loanApplicationEntity.setPhoneNumber(identityServiceEntity.getPhoneNumber());
-
-
-
-		loanApplicationEntity.setUserId(user.getUserId());
-		loanApplicationEntity.setCibilScore(user.getCibilScore());
-		loanApplicationEntity.setEmpStatus(user.isEmpStatus());
-		loanApplicationEntity.setBankAccountNumber(user.getBankAccountNumber());
-		loanApplicationEntity.setAddress(user.getAddress());
-		//user(user details from user entity)+userDetails(response body from identity service)+loanAmount
-
-		return ResponseBuilder.buildResponse(200, "Successfully recieved");
+		loanApplicationEntity.setFirstName(identityServiceEntity.get("fName"));
+		loanApplicationEntity.setLastName(identityServiceEntity.get("lName"));
+		loanApplicationEntity.setDob(identityServiceEntity.get("dob"));
+		loanApplicationEntity.setPan(identityServiceEntity.get("pan"));
+		loanApplicationEntity.setAadhar(identityServiceEntity.get("adhaar"));
+		loanApplicationEntity.setEmail(identityServiceEntity.get("email"));
+		loanApplicationEntity.setPhoneNumber(identityServiceEntity.get("mobile"));
+		
+		
+		return Integer.parseInt(identityServiceEntity.get("statusCode"));
 	}
 
-	public ResponseEntity<ApiResponse> postBanAddress(UserEntity user) {
-		String identityServiceUrl = "http://localhost:8080";
-		String url = identityServiceUrl + "/addBanAddress";
-		BanAddress banAddress= new BanAddress();
+	public int postBanAddress(long userId, String ban, String address) {
+		HashMap<String,Object> hashmap = new HashMap<>();
+		hashmap.put("user_id" , userId);
+		hashmap.put("auth_token" , ban);
+		hashmap.put("auth_token" , address);
 
 
-		ResponseEntity<IdentityServiceEntity> responseEntity = restTemplate.postForEntity(url, banAddress, IdentityServiceEntity.class);
-
-		return ResponseBuilder.buildResponse(responseEntity.getStatusCodeValue(), "Successfully posted");
+		HashMap<String,String> responseEntity = restTemplate.postForObject(idServicePostUrl, hashmap, HashMap.class);
+		return Integer.parseInt(responseEntity.get("statusCode"));
 	}
 
 
-	public static int calculateAge(LocalDate dob) {
+	public int calculateAge(LocalDate dob) {
 		LocalDate currentDate = LocalDate.now();
 		if ((dob != null) && (currentDate != null)) {
 			return Period.between(dob, currentDate).getYears();
@@ -171,7 +177,7 @@ public class UserController {
 		}
 
 	}
-	public static boolean checkAge(int age)
+	public boolean checkAge(int age)
 	{
 		// Check age within range to display.
 		if(age < 18 && age >60)
@@ -181,7 +187,7 @@ public class UserController {
 		return false;
 	}
 
-	public static boolean checkLoanStatus(String loanStatus)
+	public boolean checkLoanStatus(String loanStatus)
 	{
 		/*
 		       Applied - Need to Change Loan Status
@@ -211,7 +217,7 @@ public class UserController {
 		return true;
 	}
 
-	public static PartnerEntity fetchPartnerToOnboard(int cibilScore, boolean empStatus)
+	public PartnerEntity fetchPartnerToOnboard(int cibilScore, boolean empStatus)
 	{
 
 		if(cibilScore< 600 && empStatus)

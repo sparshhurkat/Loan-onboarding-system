@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import com.moneyview.los.model.ApiResponse;
+import com.moneyview.los.model.Dummy;
 import com.moneyview.los.model.LoanApplicationEntity;
 import com.moneyview.los.model.PartnerEntity;
 import com.moneyview.los.model.ResponseBuilder;
@@ -27,12 +28,7 @@ public class LoanApplicationController {
 	@Autowired
 	private LoanApplicationService loanApplicationService;
 	//Map<String, Double> responseBody = new HashMap<>();
-	//get loan amount from user and save to database along with all the other details
-	@PostMapping("/openLoanApplication")
-	public ResponseEntity<ApiResponse> submitLoanApplication(@RequestBody HashMap<String,Double> loanAmount){
-		loanApplicationEntity.setRequestedAmount(loanAmount.get("hello"));
-		return ResponseBuilder.buildResponse(200,"Loan application opened successfully", loanApplicationService.saveLoanApplication(loanApplicationEntity));
-	}
+	
 
 	//get loan id from payment service after successful payment of loan and change loan status in database
 	@PostMapping("/closeLoanApplication")
@@ -48,28 +44,25 @@ public class LoanApplicationController {
 	}
 	
 	
-	
 	//dummy apis
-		@GetMapping("http://localhost:8080/authenticateUser")
-		public ResponseEntity<ApiResponse> dummyAuth(@RequestBody PartnerEntity a){
+		@PostMapping("/validateToken")
+		public ResponseEntity<ApiResponse> dummyAuth(@RequestBody Dummy a){
 			return ResponseBuilder.buildResponse(200,"Auth works", "");
 		}
 		
-		@GetMapping("http://localhost:8080/api/user/'10'?serviceId=los")
-		public ResponseEntity<ApiResponse> dummyIdentity(@RequestBody PartnerEntity a){
+		@GetMapping("/api/user/10?serviceId=los")
+		public ResponseEntity<ApiResponse> dummyIdentity(@RequestBody Dummy a){
 			return ResponseBuilder.buildResponse(200,"IS works", "");
 		}
 		
-		@GetMapping("http://localhost:8080/closeApplication")
-		public ResponseEntity<ApiResponse> dummyCommunication(@RequestBody PartnerEntity a){
+		@PostMapping("/sendSMS")
+		public ResponseEntity<ApiResponse> dummyCommunication(@RequestBody Dummy a){
 			return ResponseBuilder.buildResponse(200,"communication works", "");
 		}
 		
-		@GetMapping("http://localhost:8080/addBanAddress")
-		public ResponseEntity<ApiResponse> dummyIdentity2(@RequestBody PartnerEntity a){
+		@PostMapping("/addBanAddress")
+		public ResponseEntity<ApiResponse> dummyIdentity2(@RequestBody Dummy a){
 			return ResponseBuilder.buildResponse(200,"IS works", "");
 		}
-
-	
 
 }

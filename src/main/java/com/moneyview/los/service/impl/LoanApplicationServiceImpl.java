@@ -32,6 +32,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    LocalDate currentDate = LocalDate.now();
 	    
 		
+	    
 	    newLoanApplication.setAuthToken(loanApplication.getAuthToken());
 	    newLoanApplication.setLoanId(loanApplication.getLoanId());
 	    newLoanApplication.setRefId(loanApplication.getRefId());
