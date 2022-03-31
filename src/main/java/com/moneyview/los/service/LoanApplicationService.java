@@ -1,6 +1,7 @@
 package com.moneyview.los.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -13,10 +14,14 @@ public interface LoanApplicationService {
 	
 	
 	LoanApplicationEntity closeLoanApplication(long loanId);
-
-	LoanApplicationEntity findByLoanId(long loanId);
 	
 	LoanApplicationEntity checkLoanStatus(long loanId);
 	
 	List<String> checkUserPanStatus(long userId);
+
+
+	Map<String, Object> updateLoanApplication(long userId);
+
+
+	String updateLoanApplication(long loanId, String loanStatus);
 }

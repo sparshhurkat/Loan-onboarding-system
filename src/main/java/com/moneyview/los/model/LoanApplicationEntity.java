@@ -78,7 +78,7 @@ public class LoanApplicationEntity {
 	//Details from User
 	
 	//jsonignore
-	private String authToken;
+	//private String authToken;
 	
 	@Column(name = "user_id")
 	private long userId;
@@ -98,15 +98,6 @@ public class LoanApplicationEntity {
 	@Column(name = "requested_amount")
 	private double requestedAmount;
 	
-	
-
-	public String getAuthToken() {
-		return authToken;
-	}
-
-	public void setAuthToken(String authToken) {
-		this.authToken = authToken;
-	}
 
 	public long getLoanId() {
 		return id;
@@ -220,7 +211,7 @@ public class LoanApplicationEntity {
 		this.bankAccountNumber = bankAccountNumber;
 	}
 
-	public String isLoanStatus() {
+	public String getLoanStatus() {
 		return loanStatus;
 	}
 

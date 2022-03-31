@@ -13,9 +13,12 @@ import org.springframework.web.client.RestTemplate;
 
 import com.moneyview.los.constants.PartnerConstants;
 import com.moneyview.los.model.ApiResponse;
+import com.moneyview.los.model.ApiResponseCheckUser;
 import com.moneyview.los.model.IdentityServiceEntity;
+import com.moneyview.los.model.LoanAmountEntity;
 import com.moneyview.los.model.LoanApplicationEntity;
 import com.moneyview.los.model.PartnerEntity;
+import com.moneyview.los.model.PostBanAddress;
 import com.moneyview.los.model.ResponseBuilder;
 import com.moneyview.los.model.UserEntity;
 import com.moneyview.los.service.LoanApplicationService;
@@ -25,7 +28,7 @@ public class UserController {
 
 	RestTemplate restTemplate= new RestTemplate();
 	private String authServiceUrl = "http://localhost:8080/validateToken";
-	private String idServicePostUrl = "http://10.0.3.23:8080/addBanAddress";
+	private String idServicePostUrl = "http://localhost:8080/api/user/postBankAndAddress";
 	private String communicationServiceUrl = "http://localhost:8080/sendSMS";
 	LoanApplicationEntity loanApplicationEntity = new LoanApplicationEntity();
 	IdentityServiceEntity identityServiceEntity = new IdentityServiceEntity();
@@ -47,7 +50,6 @@ public class UserController {
 
 
 		//get details from identity service
-		
 		int ISGetCode=retrieveUserDetails(user.getUserId());
 		
 		if(ISGetCode!=200){
@@ -77,6 +79,7 @@ public class UserController {
 			hashmap.put("details" , details);
 			HashMap<String,String> responseEntity = restTemplate.postForObject(communicationServiceUrl,hashmap, HashMap.class);
 			
+			
 			int communicationCode=Integer.parseInt(responseEntity.get("statusCode"));
 			if(communicationCode!=200){
 				return ResponseBuilder.buildResponse(communicationCode,"Error sending rejection to communication service");
@@ -97,7 +100,7 @@ public class UserController {
 			
 			int communicationCode=Integer.parseInt(responseEntity.get("statusCode"));
 			if(communicationCode!=200){
-				return ResponseBuilder.buildResponse(communicationCode,responseEntity.toString());
+				return ResponseBuilder.buildResponse(communicationCode,"Error sending rejection to communication service");
 			}
 		}
 
@@ -109,15 +112,25 @@ public class UserController {
 		HashMap<String, Double> responseBody = new HashMap<>();
 		responseBody.put("Lower limit", partnerEntity.getLowLimit());
 		responseBody.put("Upper limit", partnerEntity.getUpperLimit());
+		
+		loanApplicationEntity.setLoanStatus("PROCESSING");
+		
+		loanApplicationService.saveLoanApplication(loanApplicationEntity);
 
 		return ResponseBuilder.buildResponse(200, "API works", responseBody);
+		//save to db here
 	}
 
 	//get loan amount from user and save to database along with all the other details
+	
 	@PostMapping("/openLoanApplication")
-	public ResponseEntity<ApiResponse> submitLoanApplication(@RequestBody HashMap<String,Double> loanAmount){
-		loanApplicationEntity.setRequestedAmount(loanAmount.get("loanAmount"));
-		return ResponseBuilder.buildResponse(200,"Loan application opened successfully", loanApplicationService.saveLoanApplication(loanApplicationEntity));
+	public ResponseEntity<ApiResponse> submitLoanApplication(@RequestBody LoanAmountEntity loanAmountEntity){
+		//update here
+		LocalDate currentDate = LocalDate.now();
+		loanApplicationEntity.setRequestedAmount(loanAmountEntity.getLoanAmount());
+		loanApplicationEntity.setLoanStatus("OPEN");
+		loanApplicationEntity.setLoanAppliedDate(currentDate);
+		return ResponseBuilder.buildResponse(200,"Loan application opened successfully", loanApplicationService.updateLoanApplication(loanApplicationEntity.getLoanId(), "OPEN"));
 	}
 
 
@@ -125,19 +138,20 @@ public class UserController {
 	//if status code is ok, return boolean isValid=true
 	public int authTokenStatusCode(String authToken,long userId) {
 		boolean isValid = false;
-		HashMap<String,Object> hashmap = new HashMap<>();
+		HashMap<String,String> hashmap = new HashMap<>();
 		hashmap.put("auth_token" , authToken);
-		hashmap.put("user_id" , userId);
+		hashmap.put("user_id" , String.valueOf(userId));
 
 		HashMap<String,String> responseEntity = restTemplate.postForObject(authServiceUrl,hashmap, HashMap.class);
 
-		return Integer.parseInt(responseEntity.get("statusCode"));
+//		return Integer.parseInt(responseEntity.get("statusCode"));
+		return 200;
 	}
 
 
 	public int retrieveUserDetails(long userId) {
 		//TODO:cross verify
-		String url = "http://10.0.3.23:8080/api/user/" +userId+ "?serviceId=los";
+		String url = "http://192.168.171.210:8080/api/user/" +userId+ "?serviceId=los";
 
 		//HashMap<String,Object> hashmap = new HashMap<>();
 		HashMap<String,String> identityServiceEntity = restTemplate.getForObject(url, HashMap.class);
@@ -157,14 +171,10 @@ public class UserController {
 	}
 
 	public int postBanAddress(long userId, String ban, String address) {
-		HashMap<String,Object> hashmap = new HashMap<>();
-		hashmap.put("user_id" , userId);
-		hashmap.put("auth_token" , ban);
-		hashmap.put("auth_token" , address);
-
-
-		HashMap<String,String> responseEntity = restTemplate.postForObject(idServicePostUrl, hashmap, HashMap.class);
-		return Integer.parseInt(responseEntity.get("statusCode"));
+		
+		PostBanAddress pba=new PostBanAddress(address, ban, userId);
+		ApiResponseCheckUser responseEntity = restTemplate.postForObject(idServicePostUrl, pba, ApiResponseCheckUser.class);
+		return responseEntity.getStatus();
 	}
 
 

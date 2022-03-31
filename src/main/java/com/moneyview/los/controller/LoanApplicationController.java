@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import com.moneyview.los.model.ApiResponse;
+import com.moneyview.los.model.ApiResponseCheckUser;
 import com.moneyview.los.model.Dummy;
 import com.moneyview.los.model.LoanApplicationEntity;
 import com.moneyview.los.model.PartnerEntity;
@@ -32,8 +33,8 @@ public class LoanApplicationController {
 
 	//get loan id from payment service after successful payment of loan and change loan status in database
 	@PostMapping("/closeLoanApplication")
-	public ResponseEntity<ApiResponse> closeLoanApplication(@RequestBody HashMap<String,Long> loanId){
-		return ResponseBuilder.buildResponse(200,"Loan application closed successfully", loanApplicationService.closeLoanApplication(loanId.get("loanId")));
+	public ResponseEntity<ApiResponse> closeLoanApplication(@RequestBody HashMap<String,Long> hm){
+		return ResponseBuilder.buildResponse(200,"Loan application opened successfully", loanApplicationService.updateLoanApplication(hm.get("loanId"), "CLOSE"));
 	}
 
 
@@ -60,9 +61,10 @@ public class LoanApplicationController {
 			return ResponseBuilder.buildResponse(200,"communication works", "");
 		}
 		
-		@PostMapping("/addBanAddress")
-		public ResponseEntity<ApiResponse> dummyIdentity2(@RequestBody Dummy a){
-			return ResponseBuilder.buildResponse(200,"IS works", "");
+		@PostMapping("/api/user/postBankAndAddress")
+		public ApiResponseCheckUser dummyIdentity2(@RequestBody Dummy a){
+			return new ApiResponseCheckUser(1L,200,"IS works");
+			
 		}
 
 }

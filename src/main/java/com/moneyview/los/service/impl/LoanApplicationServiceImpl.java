@@ -3,6 +3,7 @@ package com.moneyview.los.service.impl;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +33,6 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    LocalDate currentDate = LocalDate.now();
 	    
 		
-	    
-	    newLoanApplication.setAuthToken(loanApplication.getAuthToken());
 	    newLoanApplication.setLoanId(loanApplication.getLoanId());
 	    newLoanApplication.setRefId(loanApplication.getRefId());
 	    newLoanApplication.setUserId(loanApplication.getUserId());
@@ -50,13 +49,15 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    newLoanApplication.setLoanStatus(loanApplication.isLoanStatus());
 	    newLoanApplication.setLoanAppliedDate(currentDate);
 	    
-	    
+	    loanApplicationRepository.save(newLoanApplication);
 	    
 	    //refIdGeneration();
 	    //TODO: add update to database
 	    int refId = Integer.parseInt(UUID.randomUUID().toString());
 	    newLoanApplication.setRefId(refId);
 	    
+	    
+	    //TODO: do i need to change to update
 	    loanApplicationRepository.save(newLoanApplication);
 	    
 	    double interest=PartnerConstants.getPartnerModelList().get(newLoanApplication.getPartnerId()).getInterest();
@@ -66,23 +67,16 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    
 	    
 	    //send to ps
-	    String paymentServiceUrl = "http://localhost:8080" + "/sendRepaymentSchedule";
+	    String paymentServiceUrl = "http://localhost:8080/sendRepaymentSchedule";
 	    ResponseEntity<LoanPaymentScheduleEntity> paymentSchedule = restTemplate.postForEntity(paymentServiceUrl, "Repayment Schedule sent successfully", LoanPaymentScheduleEntity.class);
 	    
 	    //post to cs
-	    String communicationServiceUrl = "http://localhost:8080" + "/sendLoanAgreement";
+	    String communicationServiceUrl = "http://localhost:8080/sendLoanAgreement";
 	    ResponseEntity<LoanPaymentScheduleEntity> agreementSchedule = restTemplate.postForEntity(communicationServiceUrl, "Send Loan agreement to the user", LoanPaymentScheduleEntity.class);
 	    
 	    
-        return loanApplicationRepository.save(newLoanApplication);
+        return newLoanApplication;
     }
-
-	@Override
-	public LoanApplicationEntity findByLoanId(long loanId) {
-		return null;
-		/*Optional<User> optionalUser = loanApplicationRepository.findById(loanId);
-		return optionalUser.isPresent() ? optionalUser.get() : null;*/
-	}
 	
 	@Override
     public LoanApplicationEntity closeLoanApplication(long loanId) {
@@ -92,7 +86,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 		
 		existingApplication.setLoanStatus(
 				//LoanApplicationStatus.CLOSE.toString()
-				"close")
+				"CLOSE")
 		;
 		
 		// save existing employee to DB
@@ -106,9 +100,18 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 	
 	@Override
-    public LoanApplicationEntity checkLoanStatus(long loanId) {
-		return loanApplicationRepository.findById(loanId).orElseThrow(() 
-				-> new ResourceNotFoundException("Loan", "Id", loanId));
+	public String updateLoanApplication(long loanId, String loanStatus) {
+		// TODO upadte db with userid and "processing"
+		loanApplicationRepository.setLoanStatusByLoanId(loanId, loanStatus);
+		return "Status Changed!";
+	}
+	
+	@Override
+    public String checkLoanStatus(long loanId) {
+		LoanApplicationEntity existingApplication = loanApplicationRepository.findById(loanId);
+		return existingApplication.getLoanStatus();
+		
+		
     }
 	
 	@Override
@@ -178,5 +181,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 	    return LocalDate.of(year+1, month, 5);
 
 	}
+
+	
 	
 }
